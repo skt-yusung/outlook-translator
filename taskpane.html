@@ -193,6 +193,51 @@
             font-weight: 400;
         }
 
+        .retry-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .retry-btn {
+            padding: 10px 24px;
+            background: white;
+            color: #1a1a1a;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .retry-btn:hover {
+            background: #fafafa;
+            border-color: #d0d0d0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .retry-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .retry-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .retry-btn:disabled:hover {
+            background: white;
+            border-color: #e8e8e8;
+            box-shadow: none;
+        }
+
         @media (max-width: 400px) {
             .container {
                 padding: 16px 12px;
@@ -268,10 +313,20 @@
                             </div>
                             <div class="body-content">${escapeHtml(translated.body).replace(/\n/g, '<br>')}</div>
                         </div>
+                        <div class="retry-container">
+                            <button class="retry-btn" id="retryBtn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M23 4v6h-6M1 20v-6h6"/>
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                </svg>
+                                다시 번역
+                            </button>
+                        </div>
                     </div>
                 `;
                 
                 attachCopyButtonListeners();
+                attachRetryButtonListener();
                 
             } catch (error) {
                 console.error("번역 오류:", error);
@@ -280,7 +335,28 @@
                         <p>❌ 번역 실패</p>
                         <p>${error.message}</p>
                     </div>
+                    <div class="retry-container">
+                        <button class="retry-btn" id="retryBtn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 4v6h-6M1 20v-6h6"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                            다시 시도
+                        </button>
+                    </div>
                 `;
+                
+                attachRetryButtonListener();
+            }
+        }
+
+        function attachRetryButtonListener() {
+            const retryBtn = document.getElementById('retryBtn');
+            if (retryBtn) {
+                retryBtn.addEventListener('click', function() {
+                    this.disabled = true;
+                    translateComposingEmail();
+                });
             }
         }
 
