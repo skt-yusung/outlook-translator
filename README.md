@@ -9,11 +9,12 @@ Outlook에서 작성 중인 메일을 한영/영한 번역하는 Add-in.
 - OpenAI GPT-4o-mini 기반 번역
 - 복사 버튼
 
-## 배포 구조
+## 구조
 
 - Frontend: `taskpane.html` (Vercel Static)
 - Backend: `api/translate.js` (Vercel Serverless)
 - URL: https://outlook-translator.vercel.app
+- OpenAI function calling으로 제목/본문 번역을 1회 API 호출로 처리
 
 ## 설치 방법
 
@@ -52,12 +53,10 @@ Mac 데스크탑 앱에서는 직접 등록이 불가능하므로 웹 버전 사
 # 의존성 설치
 npm install
 
-# .env 파일 생성
-cp .env.example .env
-# OPENAI_API_KEY 값 입력
+# .env.local 파일 생성 및 OPENAI_API_KEY 값 입력
 
 # 개발 서버 실행
-npm run dev
+npx vercel dev
 ```
 
 디자인 확인만 할 경우:
