@@ -1,0 +1,21 @@
+{
+  "name": "outlook-translator",
+  "version": "1.0.0",
+  "description": "Outlook Add-in for Email Translation using OpenAI",
+  "main": "taskpane.html",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "keywords": [
+    "outlook",
+    "addin",
+    "translation",
+    "openai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "vercel": "^33.0.0"
+  }
+}

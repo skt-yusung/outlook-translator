@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>메일 번역기</title>
+    
+    <!-- Office JavaScript API (CDN) -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    
+    <!-- 스타일 -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+            background-color: #ffffff;
+            color: #333;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 100%;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 16px;
+            color: #666;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .translation-result {
+            animation: fadeIn 0.4s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { 
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section {
+            margin-bottom: 24px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #0078d4;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .section h3 {
+            margin: 0;
+            color: #0078d4;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .copy-btn {
+            padding: 6px 14px;
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .copy-btn:hover {
+            background-color: #005a9e;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        .copy-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .subject-text {
+            margin: 0;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            color: #333;
+            font-size: 15px;
+            font-weight: 500;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .body-content {
+            padding: 12px;
+            background: white;
+            border-radius: 4px;
+            color: #333;
+            font-size: 14px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .body-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .body-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .body-content::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .body-content::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .error {
+            padding: 20px;
+            background: #fff4f4;
+            border-left: 4px solid #d13438;
+            border-radius: 8px;
+            color: #d13438;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .error p {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+        }
+
+        .error p:last-child {
+            margin-bottom: 0;
+            font-size: 13px;
+            color: #666;
+        }
+
+        @media (max-width: 400px) {
+            .container {
+                padding: 12px;
+            }
+            
+            .section {
+                padding: 12px;
+            }
+            
+            .header-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .copy-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="result">
+            <!-- 번역 결과가 여기에 표시됩니다 -->
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        /* global Office */
+
+        Office.onReady((info) => {
+            if (info.host === Office.HostType.Outlook) {
+                console.log("Outlook Add-in 로드 완료");
+                translateComposingEmail();
+            }
+        });
+
+        async function translateComposingEmail() {
+            const item = Office.context.mailbox.item;
+            const resultDiv = document.getElementById("result");
+            
+            try {
+                resultDiv.innerHTML = '<div class="loading">번역 중...</div>';
+                
+                const body = await getComposingBody(item);
+                const subject = await getComposingSubject(item);
+                
+                console.log("원본 제목:", subject);
+                console.log("원본 본문:", body.substring(0, 100) + "...");
+                
+                const sourceLang = detectLanguage(body);
+                const targetLang = sourceLang === 'ko' ? 'en' : 'ko';
+                
+                console.log("감지된 언어:", sourceLang, "→ 목표 언어:", targetLang);
+                
+                // 실제 API 호출
+                const translated = await callTranslationAPI(subject, body, targetLang);
+                
+                resultDiv.innerHTML = `
+                    <div class="translation-result">
+                        <div class="section">
+                            <div class="header-row">
+                                <h3>제목 (${targetLang === 'ko' ? '한글' : 'English'})</h3>
+                                <button class="copy-btn" data-text="${escapeHtml(translated.subject)}">복사</button>
+                            </div>
+                            <p class="subject-text">${escapeHtml(translated.subject)}</p>
+                        </div>
+                        <div class="section">
+                            <div class="header-row">
+                                <h3>본문</h3>
+                                <button class="copy-btn" data-text="${escapeHtml(translated.body)}">복사</button>
+                            </div>
+                            <div class="body-content">${escapeHtml(translated.body).replace(/\n/g, '<br>')}</div>
+                        </div>
+                    </div>
+                `;
+                
+                attachCopyButtonListeners();
+                
+            } catch (error) {
+                console.error("번역 오류:", error);
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <p>❌ 번역 실패</p>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function getComposingBody(item) {
+            return new Promise((resolve, reject) => {
+                item.body.getAsync(Office.CoercionType.Text, (result) => {
+                    if (result.status === Office.AsyncResultStatus.Succeeded) {
+                        resolve(result.value || "");
+                    } else {
+                        reject(new Error(result.error.message));
+                    }
+                });
+            });
+        }
+
+        function getComposingSubject(item) {
+            return new Promise((resolve, reject) => {
+                item.subject.getAsync((result) => {
+                    if (result.status === Office.AsyncResultStatus.Succeeded) {
+                        resolve(result.value || "");
+                    } else {
+                        reject(new Error(result.error.message));
+                    }
+                });
+            });
+        }
+
+        function detectLanguage(text) {
+            const koreanChars = (text.match(/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/g) || []).length;
+            const englishChars = (text.match(/[a-zA-Z]/g) || []).length;
+            const total = koreanChars + englishChars;
+            
+            if (total === 0) return 'en';
+            
+            const koreanRatio = koreanChars / total;
+            console.log(`언어 감지: 한글=${koreanChars}, 영문=${englishChars}, 비율=${koreanRatio.toFixed(2)}`);
+            
+            return koreanRatio > 0.3 ? 'ko' : 'en';
+        }
+
+        async function callMockTranslationAPI(subject, body, targetLang) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            if (targetLang === 'en') {
+                return {
+                    subject: `[EN] ${subject}`,
+                    body: `Hello,\n\nThis is a translated version of your email.\n\nOriginal content:\n${body.substring(0, 100)}...\n\nBest regards,\nTranslation Service`
+                };
+            } else {
+                return {
+                    subject: `[한글] ${subject}`,
+                    body: `안녕하세요,\n\n이것은 메일의 번역된 버전입니다.\n\n원본 내용:\n${body.substring(0, 100)}...\n\n감사합니다,\n번역 서비스`
+                };
+            }
+        }
+
+        // 실제 API 호출 함수
+        async function callTranslationAPI(subject, body, targetLang) {
+            // Vercel 배포 URL (프로덕션)
+            const apiEndpoint = "https://outlook-translator-1zfg4ifc5-skt-yusungs-projects.vercel.app/api/translate";
+            
+            try {
+                const response = await fetch(apiEndpoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        subject: subject,
+                        body: body,
+                        targetLang: targetLang
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `API 호출 실패: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                return result;
+                
+            } catch (error) {
+                console.error("API 호출 오류:", error);
+                throw new Error(`번역 API 오류: ${error.message}`);
+            }
+        }
+
+        function attachCopyButtonListeners() {
+            const copyButtons = document.querySelectorAll('.copy-btn');
+            copyButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const text = this.getAttribute('data-text');
+                    copyToClipboard(text, this);
+                });
+            });
+        }
+
+        function copyToClipboard(text, button) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text)
+                    .then(() => {
+                        showCopySuccess(button);
+                    })
+                    .catch(err => {
+                        console.error('클립보드 복사 실패:', err);
+                        fallbackCopy(text, button);
+                    });
+            } else {
+                fallbackCopy(text, button);
+            }
+        }
+
+        function showCopySuccess(button) {
+            const originalText = button.textContent;
+            button.textContent = '✓ 복사됨';
+            button.style.backgroundColor = '#28a745';
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.backgroundColor = '';
+            }, 2000);
+        }
+
+        function fallbackCopy(text, button) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showCopySuccess(button);
+            } catch (err) {
+                console.error('Fallback 복사 실패:', err);
+                alert('복사에 실패했습니다. 수동으로 복사해주세요.');
+            }
+            
+            document.body.removeChild(textArea);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
