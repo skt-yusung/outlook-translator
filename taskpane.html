@@ -269,12 +269,66 @@
     <script>
         /* global Office */
 
-        Office.onReady((info) => {
-            if (info.host === Office.HostType.Outlook) {
-                console.log("Outlook Add-in 로드 완료");
-                translateComposingEmail();
+        // 로컬 테스트 모드 감지 (Office API 없이 파일을 열었을 때)
+        const isLocalTest = typeof Office === 'undefined' || !Office.context;
+
+        if (isLocalTest) {
+            // 로컬 테스트용 Mock 데이터로 바로 표시
+            document.addEventListener('DOMContentLoaded', () => {
+                showMockResult();
+            });
+        } else {
+            Office.onReady((info) => {
+                if (info.host === Office.HostType.Outlook) {
+                    console.log("Outlook Add-in 로드 완료");
+                    translateComposingEmail();
+                }
+            });
+        }
+
+        function showMockResult() {
+            const resultDiv = document.getElementById("result");
+            const mockSubject = "Re: Q1 프로젝트 진행 현황 보고";
+            const mockBody = "Dear Team,\n\nI hope this email finds you well. Here is the translation of the quarterly project status report.\n\nProject Overview:\n- Phase 1 completed successfully with all deliverables met\n- Phase 2 is currently in progress (75% complete)\n- Expected completion date: March 15, 2025\n\nKey Achievements:\n1. Successfully integrated the new authentication system\n2. Performance optimization resulted in 40% faster load times\n3. User feedback has been overwhelmingly positive\n\nNext Steps:\n- Complete remaining Phase 2 tasks\n- Begin Phase 3 planning session\n- Schedule stakeholder review meeting\n\nPlease let me know if you have any questions.\n\nBest regards,\nProject Team";
+
+            var html = '<div class="translation-result">' +
+                '<div class="section">' +
+                    '<div class="header-row">' +
+                        '<h3>제목 (English)</h3>' +
+                        '<button class="copy-btn" data-text="' + escapeHtml(mockSubject) + '">복사</button>' +
+                    '</div>' +
+                    '<p class="subject-text">' + escapeHtml(mockSubject) + '</p>' +
+                '</div>' +
+                '<div class="section">' +
+                    '<div class="header-row">' +
+                        '<h3>본문</h3>' +
+                        '<button class="copy-btn" data-text="' + escapeHtml(mockBody) + '">복사</button>' +
+                    '</div>' +
+                    '<div class="body-content">' + escapeHtml(mockBody).replace(/\n/g, '<br>') + '</div>' +
+                '</div>' +
+                '<div class="retry-container">' +
+                    '<button class="retry-btn" id="retryBtn">' +
+                        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+                            '<path d="M23 4v6h-6M1 20v-6h6"/>' +
+                            '<path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>' +
+                        '</svg>' +
+                        '다시 번역' +
+                    '</button>' +
+                '</div>' +
+            '</div>';
+
+            resultDiv.innerHTML = html;
+
+            attachCopyButtonListeners();
+            // 로컬에서 retry 버튼 클릭 시 로딩 → 다시 mock 표시
+            var retryBtn = document.getElementById('retryBtn');
+            if (retryBtn) {
+                retryBtn.addEventListener('click', function() {
+                    resultDiv.innerHTML = '<div class="loading">번역 중...</div>';
+                    setTimeout(showMockResult, 1000);
+                });
             }
-        });
+        }
 
         async function translateComposingEmail() {
             const item = Office.context.mailbox.item;
