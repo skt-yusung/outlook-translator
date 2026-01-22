@@ -269,16 +269,18 @@
     <script>
         /* global Office */
 
-        // 로컬 테스트 모드 감지 (Office API 없이 파일을 열었을 때)
-        const isLocalTest = typeof Office === 'undefined' || !Office.context;
+        // URL 파라미터로 mock 모드 확인 (?mock=true) 또는 file:// 프로토콜
+        var urlParams = new URLSearchParams(window.location.search);
+        var isMockMode = urlParams.get('mock') === 'true' || window.location.protocol === 'file:';
 
-        if (isLocalTest) {
+        if (isMockMode) {
             // 로컬 테스트용 Mock 데이터로 바로 표시
-            document.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('DOMContentLoaded', function() {
                 showMockResult();
             });
         } else {
-            Office.onReady((info) => {
+            // 실제 Outlook 환경
+            Office.onReady(function(info) {
                 if (info.host === Office.HostType.Outlook) {
                     console.log("Outlook Add-in 로드 완료");
                     translateComposingEmail();
