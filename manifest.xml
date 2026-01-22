@@ -29,7 +29,7 @@
       <DesktopSettings>
         <!-- ⚠️⚠️⚠️ 여기를 수정하세요! (1번) ⚠️⚠️⚠️ -->
         <!-- GitHub Gist Raw URL을 여기에 붙여넣기 -->
-        <SourceLocation DefaultValue="https://skt-yusung.github.io/outlook-translator/taskpane"/>
+        <SourceLocation DefaultValue="https://outlook-translator.vercel.app/taskpane.html"/>
         <RequestedHeight>250</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -90,7 +90,7 @@
         <bt:Urls>
           <!-- ⚠️⚠️⚠️ 여기도 수정하세요! (2번) ⚠️⚠️⚠️ -->
           <!-- 위와 똑같은 GitHub Gist Raw URL을 여기에도 붙여넣기 -->
-          <bt:Url id="Taskpane.Url" DefaultValue="https://skt-yusung.github.io/outlook-translator/taskpane"/>
+          <bt:Url id="Taskpane.Url" DefaultValue="https://outlook-translator.vercel.app/taskpane.html"/>
         </bt:Urls>
         <bt:ShortStrings>
           <bt:String id="GroupLabel" DefaultValue="번역"/>

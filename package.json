@@ -4,7 +4,6 @@
   "description": "Outlook Add-in for Email Translation using OpenAI",
   "main": "taskpane.html",
   "scripts": {
-    "dev": "vercel dev",
     "start": "npx http-server -p 3000 -c-1 --cors",
     "deploy": "vercel --prod"
   },
@@ -16,8 +15,7 @@
   ],
   "author": "",
   "license": "MIT",
-  "dependencies": {},
   "devDependencies": {
-    "vercel": "^33.0.0"
+    "vercel": "^50.4.9"
   }
 }
